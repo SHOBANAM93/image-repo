@@ -10,9 +10,38 @@
     <link rel="stylesheet" type="text/css" href="/webjars/bootstrap/css/bootstrap.min.css"/>
     <script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
     <script type="text/javascript" src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+    <style>
+        .center {
+            text-align: center;
+            border: 3px solid green;
+        }
+
+        .right {
+            position: absolute;
+            right: 0px;
+            width: 300px;
+            border: 3px solid #73AD21;
+            padding: 10px;
+        }
+        form{
+            width: 500px;
+            margin-top: 50px;
+            padding: 10px;
+            border: 3px solid yellow;
+            background-color: lightyellow;
+        }
+    </style>
 </head>
 <body>
-    <h1>Image Repository</h1>
+    <div class="center">
+        <h1>Image Repository</h1>
+        <div class="container authenticated right" style="display:none">
+            Logged in as: <span id="user"></span>
+            <div>
+                <button onClick="logout()" class="btn btn-primary">Logout</button>
+            </div>
+        </div>
+    </div>
     <div class="container unauthenticated">
         With GitHub: <a href="/oauth2/authorization/github">click here</a>
     </div>
@@ -20,11 +49,45 @@
         With Google: <a href="/oauth2/authorization/google">click here</a>
     </div>
     <div class="container authenticated" style="display:none">
-        Logged in as: <span id="user"></span>
-        <div>
-            <button onClick="logout()" class="btn btn-primary">Logout</button>
+        <form>
+            <button id="upload">Upload Images</button>
+            <button id="retrieve">Retrieve Images</button>
+        </form>
+    </div>
+    <div class="container addImages" style="display:none">
+        <form id = "imageForm" enctype="multipart/form-data">
+            <label for="files">Select files:</label>
+            <input type="file" id="files" name="files" accept=".gif,.jpg,.jpeg,.png,.svg" size="100" multiple><br>
+            <label for="tags">Enter tags (space separated) to describe the image:&nbsp;</label>
+            <input type="text" id="tags" name="tags"/><br><br>
+            <button type="button" name="submit_1" id="submit_1">submit</button>
+            <span id="formResult"></span>
+        </form>
+
+    </div>
+    <div class="container retrieveImages" style="display:none">
+        <form>
+            <button id="tag-search">Search by Tags</button>
+            <button id="name-search">Search by Exact Name</button>
+        </form>
+        <div class="container fileSearch" style="display:none">
+            <form id="getImagesForm">
+                <label for="imageName">Enter file Names:&nbsp;</label>
+                <input name="imageName" id="imageName" type="text"><br/>
+                <button type="button" name="submit_2" id="submit_2">submit</button>
+            </form>
+        </div>
+        <div class="container tagSearch" style="display:none">
+            <form id="getTagsForm">
+                <label for="tagnames">Enter the Tags (space separated):&nbsp;</label>
+                <input name="tagnames" id="tagnames" type="text"><br/>
+                <button type="button" name="submit_3" id="submit_3">submit</button>
+            </form>
+        </div>
+        <div id="image">
         </div>
     </div>
+
     <script type="text/javascript">
         $.get("/user", function(data) {
             $("#user").html(data.name);
@@ -36,9 +99,95 @@
                 $("#user").html('');
                 $(".unauthenticated").show();
                 $(".authenticated").hide();
+                $(".addImages").hide();
+                $(".retrieveImages").hide();
             })
             return true;
         }
+        $('#upload').on('click', function (e){
+            e.preventDefault();
+            $(".addImages").show();
+            $(".retrieveImages").hide();
+            $(".tagSearch").hide();
+            $(".fileSearch").hide();
+            document.getElementById('files').value = null;
+        });
+        $('#retrieve').on('click', function (e){
+            e.preventDefault();
+            $(".retrieveImages").show();
+            $(".addImages").hide();
+            document.getElementById('image').setAttribute('src','');
+            $("#image").hide();
+            $('#imageName').val('');
+        });
+        $('#tag-search').on('click', function (e){
+            e.preventDefault();
+            $(".tagSearch").show();
+            $(".fileSearch").hide();
+            document.getElementById('imageName').value = null;
+        });
+        $('#name-search').on('click', function (e){
+            e.preventDefault();
+            $(".tagSearch").hide();
+            $(".fileSearch").show();
+            document.getElementById('tagnames').value = null;
+        });
+        $('#submit_1').on('click', function() {
+            let data = new FormData($("#imageForm")[0]);
+            $.ajax({
+                       url: '/upload',
+                       type: 'POST',
+                       data: data,
+                       processData: false,
+                       contentType: false,
+                       success: function(r) {
+                           console.log('success', r);
+                           $("#formResult").text(r.data);
+                       },
+                       error: function(r) {
+                           console.log('error', r);
+                       }
+                   });
+        });
+        $('#submit_2').on('click', function() {
+            let searchQuery = $("#imageName").val();
+            console.log(searchQuery);
+            $.ajax({
+                       url: '/retrieve/'+searchQuery,
+                       type: 'GET',
+                       processData: false,
+                       contentType: false,
+                       success: function(r) {
+                           if (!$.trim(r.data)){
+                               console.log('image not found');
+                           }
+                           else {
+                               console.log('success', r);
+                               $("#image").append("<img src='data:image/png;base64," + r.picByte + "'>");
+                               $("#image").show();
+                           }
+                       },
+                       error: function(r) {
+                           console.log('error', r);
+                       }
+                   });
+        });
+        $('#submit_3').on('click', function() {
+            let data = new FormData($("#getTagsForm")[0]);
+            $.ajax({
+                       url: '/retrieve/tags',
+                       type: 'POST',
+                       data: data,
+                       processData: false,
+                       contentType: false,
+                       success: function(r) {
+                           console.log('success', r);
+                       },
+                       error: function(r) {
+                           console.log('error', r);
+                       }
+                   });
+        });
         $.ajaxSetup({
             beforeSend : function(xhr, settings) {
                 if (settings.type == 'POST' || settings.type == 'PUT'
