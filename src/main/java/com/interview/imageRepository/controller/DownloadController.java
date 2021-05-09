@@ -7,19 +7,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-@Controller
-@RequestMapping("/download")
+@RestController
+@CrossOrigin("*")
 public class DownloadController {
 
   @Autowired
@@ -48,8 +55,26 @@ public class DownloadController {
                         @PathVariable("imageName") String imageName) throws IOException {
     String emailId = Objects.requireNonNull(principal.getAttribute("email")).toString().toLowerCase();
     final Optional<Image> retrievedImage = imageRepository.findByName(imageName);
-    Image img = new Image(emailId, retrievedImage.get().getName(), retrievedImage.get().getType(),
-            decompressBytes(retrievedImage.get().getPicByte()), retrievedImage.get().getTags());
-    return img;
+    if (retrievedImage.isEmpty()) {
+      return null;
+    }
+    return new Image(emailId,
+            retrievedImage.get().getName(),
+            retrievedImage.get().getType(),
+            decompressBytes(retrievedImage.get().getPicByte()),
+            retrievedImage.get().getTags());
+  }
+
+  @PostMapping(path = {"/retrieve/tags"})
+  public Image getImageFromTags(@AuthenticationPrincipal OAuth2User principal,
+                        @RequestParam("tagnames") String tagnames) throws IOException {
+    System.out.println(tagnames);
+    String[] tags = tagnames.split(" ");
+
+    List<Image> imageList = new ArrayList<>();
+    Arrays.asList(tags).forEach(tag -> {
+
+    });
+    return null;
   }
 }
