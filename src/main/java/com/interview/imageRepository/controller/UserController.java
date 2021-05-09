@@ -9,11 +9,12 @@ import java.util.Collections;
 import java.util.Map;
 
 @RestController
-public class UserController
-{
+public class UserController {
 
   @GetMapping("/user")
   public Map<String, Object> user(@AuthenticationPrincipal OAuth2User principal) {
+    principal.getAttributes()
+            .forEach((key, value) -> System.out.println(key + "->" + value));
     return Collections.singletonMap("name", principal.getAttribute("name"));
   }
 }
