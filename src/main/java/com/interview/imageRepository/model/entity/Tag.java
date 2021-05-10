@@ -25,6 +25,8 @@ public class Tag {
   @JoinColumn(name = "image_id", nullable = false)
   private Image image;
 
+  public Tag() {}
+
   public Tag(String name) {
     this.name = name;
   }

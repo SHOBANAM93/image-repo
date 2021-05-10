@@ -30,6 +30,12 @@
             border: 3px solid yellow;
             background-color: lightyellow;
         }
+        .image-block{
+            display: inline-block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 40%;
+        }
     </style>
 </head>
 <body>
@@ -59,11 +65,16 @@
             <label for="files">Select files:</label>
             <input type="file" id="files" name="files" accept=".gif,.jpg,.jpeg,.png,.svg" size="100" multiple><br>
             <label for="tags">Enter tags (space separated) to describe the image:&nbsp;</label>
-            <input type="text" id="tags" name="tags"/><br><br>
+            <input type="text" id="tags" name="tags"/><br>
+            <label>Select the privacy for the Images:&nbsp;</label><br>
+            <input type="radio" id="private" name="privacy" value="private">
+            <label for="private">Private Image</label>&nbsp;&nbsp;
+            <input type="radio" id="public" name="privacy" value="public">
+            <label for="public">Public Image</label><br><br>
             <button type="button" name="submit_1" id="submit_1">submit</button>
-            <span id="formResult"></span>
         </form>
-
+        <div id="uploadResult">
+        </div>
     </div>
     <div class="container retrieveImages" style="display:none">
         <form>
@@ -134,6 +145,8 @@
         });
         $('#submit_1').on('click', function() {
             let data = new FormData($("#imageForm")[0]);
+            $("#uploadResult").html('');
+            $("#uploadResult").hide();
             $.ajax({
                        url: '/upload',
                        type: 'POST',
@@ -142,30 +155,37 @@
                        contentType: false,
                        success: function(r) {
                            console.log('success', r);
-                           $("#formResult").text(r.data);
+                           $("#uploadResult").append("<span>"+r.message+"</span>");
+                           $("#uploadResult").show();
                        },
                        error: function(r) {
                            console.log('error', r);
+                           $("#uploadResult").append("<span>"+r.responseJSON.message+"</span>");
+                           $("#uploadResult").show();
                        }
                    });
         });
         $('#submit_2').on('click', function() {
             let searchQuery = $("#imageName").val();
             console.log(searchQuery);
+            $("#image").html('');
+            $("#image").hide();
             $.ajax({
                        url: '/retrieve/'+searchQuery,
                        type: 'GET',
                        processData: false,
                        contentType: false,
                        success: function(r) {
-                           if (!$.trim(r.data)){
+                           console.log(r.picByte);
+                           if (!$.trim(r.picByte)){
                                console.log('image not found');
+                               $("#image").append("<span>"+r.message+"</span>");
                            }
                            else {
                                console.log('success', r);
-                               $("#image").append("<img src='data:image/png;base64," + r.picByte + "'>");
-                               $("#image").show();
+                               $("#image").append("<img class='image-block' src='data:image/png;base64," + r.picByte + "'>");
                            }
+                           $("#image").show();
                        },
                        error: function(r) {
                            console.log('error', r);
@@ -174,6 +194,8 @@
         });
         $('#submit_3').on('click', function() {
             let data = new FormData($("#getTagsForm")[0]);
+            $("#image").html('');
+            $("#image").hide();
             $.ajax({
                        url: '/retrieve/tags',
                        type: 'POST',
@@ -182,9 +204,24 @@
                        contentType: false,
                        success: function(r) {
                            console.log('success', r);
+                           if (!$.trim(r.imageSet)){
+                               console.log(r.message);
+                               $("#image").append("<span>"+r.message+"</span>");
+                           }
+                           else {
+                               for (let i in r.imageSet) {
+                                   //console.log(r.imageSet[i]);
+                                   $("#image").append(
+                                       "<img class='image-block' src='data:image/png;base64,"
+                                       + r.imageSet[i].picByte + "'>");
+                               }
+                           }
+                           $("#image").show();
                        },
                        error: function(r) {
                            console.log('error', r);
+                           $("#image").append("<span>"+r+"</span>");
+                           $("#image").show();
                        }
                    });
         });

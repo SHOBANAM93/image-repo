@@ -10,6 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface ImageRepository extends JpaRepository<Image, Long> {
-  Optional<Image> findByName(String name);
-  List<Image> findAllByTagsIsContaining()
+  List<Image> findByName(String name);
+
 }

@@ -1,6 +1,11 @@
 package com.interview.imageRepository.model.entity;
 
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
+
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,14 +33,26 @@ public class Image {
   @Column(name = "type")
   private String type;
 
+  @Column(name = "privacy")
+  private String privacy;
+
   @Column(name = "picByte", length = 1000)
   private byte[] picByte;
 
   @OneToMany(mappedBy = "image")
+  @Cascade({CascadeType.ALL})
   private List<Tag> tags;
 
   public Image() {
     super();
+  }
+
+  public Image(String email, String name, String type, byte[] picByte, String privacy) {
+    this.email = email;
+    this.name = name;
+    this.type = type;
+    this.picByte = picByte;
+    this.privacy = privacy;
   }
 
   public Image(String email, String name, String type, byte[] picByte, List<Tag> tags) {
@@ -84,6 +101,31 @@ public class Image {
 
   public void setEmail(String email) {
     this.email = email;
+  }
+
+  public String getPrivacy() {
+    return privacy;
+  }
+
+  public void setPrivacy(String privacy) {
+    this.privacy = privacy;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Image)) return false;
+    Image image = (Image) o;
+    return Objects.equals(getName(), image.getName()) &&
+            Objects.equals(getType(), image.getType()) &&
+            Arrays.equals(getPicByte(), image.getPicByte());
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(getName(), getType());
+    result = 31 * result + Arrays.hashCode(getPicByte());
+    return result;
   }
 }
 

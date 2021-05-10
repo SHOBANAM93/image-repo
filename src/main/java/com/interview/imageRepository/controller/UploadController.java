@@ -5,6 +5,7 @@ import com.interview.imageRepository.model.entity.Image;
 import com.interview.imageRepository.model.entity.Tag;
 import com.interview.imageRepository.repository.ImageRepository;
 import com.interview.imageRepository.repository.TagRepository;
+import com.interview.imageRepository.utils.CompressionUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,29 +36,13 @@ public class UploadController {
   @Autowired
   TagRepository tagRepository;
 
-  // compress the image bytes before storing it in the database
-  public static byte[] compressBytes(byte[] data) {
-    Deflater deflater = new Deflater();
-    deflater.setInput(data);
-    deflater.finish();
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-    byte[] buffer = new byte[1024];
-    while (!deflater.finished()) {
-      int count = deflater.deflate(buffer);
-      outputStream.write(buffer, 0, count);
-    }
-    try {
-      outputStream.close();
-    } catch (IOException e) {
-    }
-    System.out.println("Compressed Image Byte Size - " + outputStream.toByteArray().length);
-    return outputStream.toByteArray();
-  }
+
 
   @PostMapping("/upload")
   public ResponseEntity<ResponseMessage> uploadFiles(@AuthenticationPrincipal OAuth2User principal,
                                                      @RequestParam("files") MultipartFile[] files,
-                                                     @RequestParam("tags") String tags) {
+                                                     @RequestParam("tags") String tags,
+                                                     @RequestParam("privacy") String privacy) {
     String emailId = Objects.requireNonNull(principal.getAttribute("email")).toString().toLowerCase();
     System.out.println(principal.getAttribute("name") + " uploading " + files.length + " images");
     String message = "";
@@ -65,26 +50,28 @@ public class UploadController {
       List<String> fileNames = new ArrayList<>();
 
       String[] tagsArr = tags.split(" ");
-      List<Tag> tagList = new ArrayList<>();
-      Arrays.asList(tagsArr).stream().forEach(tagname -> {
-        Tag tag = new Tag(tagname);
-        tagList.add(tag);
-      });
 
-
-      Arrays.asList(files).stream().forEach(file -> {
+      Arrays.stream(files).forEach(file -> {
         try {
           System.out.println("Original Image Byte Size - " + file.getBytes().length);
           Image img = new Image(emailId,
                   file.getOriginalFilename(),
                   file.getContentType(),
-                  compressBytes(file.getBytes()),
-                  tagList);
-          imageRepository.save(img);
-          tagList.stream().forEach(tag -> {
-            tag.setImage(img);
-            tagRepository.save(tag);
+                  CompressionUtils.compressBytes(file.getBytes()),
+                  privacy);
+          img = imageRepository.save(img);
+          Image finalImg = img;
+          List<Tag> tagList = new ArrayList<>();
+          Arrays.stream(tagsArr).forEach(tagname -> {
+            Tag tag = new Tag(tagname);
+            tagList.add(tag);
           });
+          tagList.forEach(tag -> {
+            tag.setImage(finalImg);
+            tag = tagRepository.save(tag);
+          });
+          img.setTags(tagList);
+          imageRepository.save(img);
           fileNames.add(file.getOriginalFilename());
         } catch (IOException ioException) {
           ioException.printStackTrace();
