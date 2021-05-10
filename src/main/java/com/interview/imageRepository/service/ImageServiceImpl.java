@@ -1,10 +1,13 @@
 package com.interview.imageRepository.service;
 
+import com.interview.imageRepository.Constants;
+import com.interview.imageRepository.exception.CryptoException;
 import com.interview.imageRepository.model.entity.Image;
 import com.interview.imageRepository.model.entity.Tag;
 import com.interview.imageRepository.repository.ImageRepository;
 import com.interview.imageRepository.repository.TagRepository;
 import com.interview.imageRepository.utils.CompressionUtils;
+import com.interview.imageRepository.utils.CryptoUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,7 +43,11 @@ public class ImageServiceImpl implements ImageService {
 
     retrievedImage.forEach(image -> {
       if (validImageRetrievalPermission(image, emailId)) {
-        imageSet.add(createNewDecompressedImage(emailId, image));
+        try {
+          imageSet.add(createNewDecompressedImage(emailId, image));
+        } catch (CryptoException e) {
+          e.printStackTrace();
+        }
       }
     });
 
@@ -65,7 +72,11 @@ public class ImageServiceImpl implements ImageService {
         Image retrievedImage = obj.getImage();
 
         if (validImageRetrievalPermission(retrievedImage, emailId)) {
-          imageSet.add(createNewDecompressedImage(emailId, retrievedImage));
+          try {
+            imageSet.add(createNewDecompressedImage(emailId, retrievedImage));
+          } catch (CryptoException e) {
+            e.printStackTrace();
+          }
         }
       });
     });
@@ -103,7 +114,7 @@ public class ImageServiceImpl implements ImageService {
         imageRepository.save(img);
 
         fileNames.add(file.getOriginalFilename());
-      } catch (IOException ioException) {
+      } catch (IOException | CryptoException ioException) {
         ioException.printStackTrace();
       }
     });
@@ -111,21 +122,23 @@ public class ImageServiceImpl implements ImageService {
     return fileNames;
   }
 
-  private Image createNewCompressedImage(String emailId, MultipartFile file, String privacy) throws IOException {
+  private Image createNewCompressedImage(String emailId, MultipartFile file, String privacy)
+          throws IOException, CryptoException {
 
     byte[] compressedPicBytes = CompressionUtils.compressBytes(file.getBytes());
+    byte[] encryptedPicBytes = CryptoUtils.encrypt(Constants.CRYPTO_KEY,compressedPicBytes);
 
     return new Image(emailId,
             file.getOriginalFilename(),
             file.getContentType(),
-            compressedPicBytes,
+            encryptedPicBytes,
             privacy);
   }
 
-  private Image createNewDecompressedImage(String emailId, Image image) {
+  private Image createNewDecompressedImage(String emailId, Image image) throws CryptoException {
 
-    byte[] decompressedPicBytes = CompressionUtils.decompressBytes(image.getPicByte());
-
+    byte[] decryptedPicBytes = CryptoUtils.decrypt(Constants.CRYPTO_KEY,image.getPicByte());
+    byte[] decompressedPicBytes = CompressionUtils.decompressBytes(decryptedPicBytes);
 
     return new Image(emailId,
             image.getName(),
