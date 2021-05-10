@@ -17,8 +17,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * A utility class that encrypts and decrypts the image getting stored in database.
- * Citation : www.codejava.net
+ * A utility class that encrypts and decrypts the image getting stored in database. Citation :
+ * www.codejava.net
  */
 public class CryptoUtils {
   private static final String ALGORITHM = "AES";

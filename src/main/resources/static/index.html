@@ -176,19 +176,28 @@
                        processData: false,
                        contentType: false,
                        success: function(r) {
-                           console.log(r.picByte);
-                           if (!$.trim(r.picByte)){
+                           console.log(r.imageSet);
+                           if (!$.trim(r.imageSet)){
                                console.log('image not found');
                                $("#image").append("<span>"+r.message+"</span>");
                            }
                            else {
                                console.log('success', r);
-                               $("#image").append("<img class='image-block' src='data:image/png;base64," + r.picByte + "'>");
+                               //$("#image").append("<img class='image-block' src='data:image/png;base64," + r.picByte + "'>");
+                               for (let i in r.imageSet) {
+                                   //console.log(r.imageSet[i]);
+                                   $("#image").append(
+                                       "<img class='image-block' src='data:image/png;base64,"
+                                       + r.imageSet[i].picByte + "'>");
+                               }
                            }
                            $("#image").show();
                        },
                        error: function(r) {
                            console.log('error', r);
+                           console.log('message', r.responseJSON.message);
+                           $("#image").append("<span>"+r.responseJSON.message+"</span>");
+                           $("#image").show();
                        }
                    });
         });
@@ -220,7 +229,8 @@
                        },
                        error: function(r) {
                            console.log('error', r);
-                           $("#image").append("<span>"+r+"</span>");
+                           //console.log('message', r.responseJSON.message);
+                           $("#image").append("<span>"+r.responseJSON.message+"</span>");
                            $("#image").show();
                        }
                    });
