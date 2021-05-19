@@ -1,5 +1,4 @@
 # image-repo
-GITHUB repo for Shopify Backend Challenge https://docs.google.com/document/d/1ZKRywXQLZWOqVOHC4JkF3LqdpO3Llpfk_CkZPR8bjak/edit# <br/>
 Author: Mohan Shobana<br/>
 LinkedIn: https://www.linkedin.com/in/mohan-shobana-018m93/<br/>
 Contact: shobana.m@northeastern.edu<br/>
